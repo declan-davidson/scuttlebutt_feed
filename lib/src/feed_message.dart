@@ -4,7 +4,7 @@ import 'package:flutter_sodium/flutter_sodium.dart';
 import 'package:crypto/crypto.dart' show sha256;
 
 class FeedMessage{
-  String previous;
+  dynamic previous;
   String author; //base64-encoded
   final String hash = "sha256";
   int sequence;

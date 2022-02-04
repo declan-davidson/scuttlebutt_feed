@@ -19,12 +19,19 @@ class FeedService{
 
   static void postMessage(String body, String identity, String encodedSk) async {
     Database database = await _createOrOpenDatabase();
+    dynamic previous = null;
+    int sequence = 0;
+    Map<String, dynamic> content = { "type": "post", "content": body };
+    
 
     List<Map<String, Object?>> mappedPreviousMessage = await database.rawQuery('select * from messages where author = "$identity" order by sequence desc limit 1');
-    FeedMessage previousMessage = FeedMessage.fromRetrievedMessage(mappedPreviousMessage[0]);
-    Map<String, dynamic> content = { "type": "post", "content": body };
+    if(mappedPreviousMessage.isNotEmpty){
+      FeedMessage previousMessage = FeedMessage.fromRetrievedMessage(mappedPreviousMessage[0]);
+      previous = previousMessage.id;
+      sequence = previousMessage.sequence + 1;
+    }
 
-    FeedMessage message = FeedMessage.fromMessageToPostData(previousMessage.id, identity, previousMessage.sequence + 1, content, encodedSk);
+    FeedMessage message = FeedMessage.fromMessageToPostData(previous, identity, sequence, content, encodedSk);
     _storeMessage(message);
     //database.close();
   }

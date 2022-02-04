@@ -17,7 +17,7 @@ class FeedService{
     );
   }
 
-  static void postMessage(String body, String identity, String encodedSk) async {
+  static Future<void> postMessage(String body, String identity, String encodedSk) async {
     Database database = await _createOrOpenDatabase();
     dynamic previous = null;
     int sequence = 0;

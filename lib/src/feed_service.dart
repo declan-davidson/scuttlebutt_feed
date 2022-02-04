@@ -18,22 +18,30 @@ class FeedService{
   }
 
   static Future<void> postMessage(String body, String identity, String encodedSk) async {
-    Database database = await _createOrOpenDatabase();
-    dynamic previous = null;
-    int sequence = 0;
-    Map<String, dynamic> content = { "type": "post", "content": body };
-    
+    try{
+      Database database = await _createOrOpenDatabase();
+      dynamic previous = null;
+      int sequence = 0;
+      Map<String, dynamic> content = { "type": "post", "content": body };
+      
 
-    List<Map<String, Object?>> mappedPreviousMessage = await database.rawQuery('select * from messages where author = "$identity" order by sequence desc limit 1');
-    if(mappedPreviousMessage.isNotEmpty){
-      FeedMessage previousMessage = FeedMessage.fromRetrievedMessage(mappedPreviousMessage[0]);
-      previous = previousMessage.id;
-      sequence = previousMessage.sequence + 1;
+      List<Map<String, Object?>> mappedPreviousMessage = await database.rawQuery('select * from messages where author = "$identity" order by sequence desc limit 1');
+      if(mappedPreviousMessage.isNotEmpty){
+        FeedMessage previousMessage = FeedMessage.fromRetrievedMessage(mappedPreviousMessage[0]);
+        previous = previousMessage.id;
+        sequence = previousMessage.sequence + 1;
+      }
+
+      FeedMessage message = FeedMessage.fromMessageToPostData(previous, identity, sequence, content, encodedSk);
+      await _storeMessage(message);
+      //database.close();
     }
-
-    FeedMessage message = FeedMessage.fromMessageToPostData(previous, identity, sequence, content, encodedSk);
-    await _storeMessage(message);
-    //database.close();
+    on DatabaseException {
+      throw Exception("DatabaseException in postMessage");
+    }
+    on Exception {
+      throw Exception("Some error in postMessage");
+    }
   }
 
   static void receiveMessage(String jsonMessage){
@@ -73,15 +81,24 @@ class FeedService{
 
   static Future<List<FeedMessage>> retrieveMessages({ required String identity, int hops = 2 } /* We may have more parameters here in future */) async {
     List<FeedMessage> messages = [];
-    Database database = await _createOrOpenDatabase();
-    
-    List<Map<String, Object?>> mappedMessages = await database.rawQuery('select * from messages inner join peers on messages.author = peers.identity where author = "$identity" or peers.hops < 3 order by timestamp desc');
 
-    for(Map<String, Object?> message in mappedMessages){
-      messages.add(FeedMessage.fromRetrievedMessage(message));
+    try{
+      Database database = await _createOrOpenDatabase();
+      
+      List<Map<String, Object?>> mappedMessages = await database.rawQuery('select * from messages inner join peers on messages.author = peers.identity where author = "$identity" or peers.hops < 3 order by timestamp desc');
+
+      for(Map<String, Object?> message in mappedMessages){
+        messages.add(FeedMessage.fromRetrievedMessage(message));
+      }
+
+      //database.close();
+      return messages;
     }
-
-    //database.close();
-    return messages;
+    on DatabaseException{
+      throw Exception("DatabaseException in retrieveMessages");
+    }
+    on Exception{
+      throw Exception("Some exception in retrieveMessages");
+    }
   }
 }

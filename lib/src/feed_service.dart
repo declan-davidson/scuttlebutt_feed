@@ -11,7 +11,7 @@ class FeedService{
         db.execute("PRAGMA foreign_keys = ON");
         db.execute("CREATE TABLE peers(identity VARCHAR PRIMARY KEY, hops INTEGER NOT NULL)");
         db.execute("CREATE TABLE messages(id VARCHAR PRIMARY KEY, previous VARCHAR, author VARCHAR, sequence INTEGER, timestamp INTEGER, content VARCHAR, signature VARCHAR, FOREIGN KEY(author) references peers(identity))"); 
-        db.execute("create table follows(follower VARCHAR, followee VARCHAR, FOREIGN key(follower) references peers(identity), FOREIGN key(followee) REFERENCES peers(identity))");
+        return db.execute("create table follows(follower VARCHAR, followee VARCHAR, FOREIGN key(follower) references peers(identity), FOREIGN key(followee) REFERENCES peers(identity))");
       },
       onConfigure: (db) { db.execute("PRAGMA foreign_keys = ON"); }
     );
@@ -32,7 +32,7 @@ class FeedService{
     }
 
     FeedMessage message = FeedMessage.fromMessageToPostData(previous, identity, sequence, content, encodedSk);
-    _storeMessage(message);
+    await _storeMessage(message);
     //database.close();
   }
 
@@ -41,7 +41,7 @@ class FeedService{
     _storeMessage(message);
   }
 
-  static void _storeMessage(FeedMessage message) async {
+  static Future<void> _storeMessage(FeedMessage message) async {
     Database database = await _createOrOpenDatabase();
 
     if(message.verifySignature()){
@@ -65,7 +65,7 @@ class FeedService{
         await database.execute("insert into peers(identity, hops) values(${message.content["contact"]}, ${authorHops + 1}) on CONFLICT(identity) DO update set hops = ${authorHops + 1}");
       }
 
-      database.insert("messages", message.toFullMap());
+      await database.insert("messages", message.toFullMap());
     }
 
     //database.close();

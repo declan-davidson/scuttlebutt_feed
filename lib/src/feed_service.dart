@@ -47,33 +47,38 @@ class FeedService{
   }
 
   static Future<void> _storeMessage(FeedMessage message) async {
-    Database database = await _createOrOpenDatabase();
+    try{
+      Database database = await _createOrOpenDatabase();
 
-    if(message.verifySignature()){
+      if(message.verifySignature()){
 
-      //If the message is a follow, we need to take account of that and update our hops to the followee if necessary. Need to think about how to handle this when WE follow people
-      if(message.content["type"] == "contact"){
+        //If the message is a follow, we need to take account of that and update our hops to the followee if necessary. Need to think about how to handle this when WE follow people
+        if(message.content["type"] == "contact"){
 
-        //If the peer has been newly-followed
-        if(message.content["following"]){
-          await database.rawInsert('insert into follows(follower, followee) values("${message.author}", "${message.content["contact"]}")');
+          //If the peer has been newly-followed
+          if(message.content["following"]){
+            await database.rawInsert('insert into follows(follower, followee) values("${message.author}", "${message.content["contact"]}")');
+          }
+          //If the peer has been unfollowed
+          else{
+            await database.rawDelete('delete from follows where follower = "${message.author}" and followee = "${message.content["contact"]}"');
+          }
+
+          //Update hops
+          List<Map<String, Object?>> map = await database.rawQuery('select hops from follows inner join peers on peers.identity = follows.follower where followee = "${message.content["contact"]}" order by hops asc limit 1'); //Obtains lowest hop distance of all followers of this followee
+          int authorHops = map[0]["hops"] as int;
+
+          await database.execute("insert into peers(identity, hops) values(${message.content["contact"]}, ${authorHops + 1}) on CONFLICT(identity) DO update set hops = ${authorHops + 1}");
         }
-        //If the peer has been unfollowed
-        else{
-          await database.rawDelete('delete from follows where follower = "${message.author}" and followee = "${message.content["contact"]}"');
-        }
 
-        //Update hops
-        List<Map<String, Object?>> map = await database.rawQuery('select hops from follows inner join peers on peers.identity = follows.follower where followee = "${message.content["contact"]}" order by hops asc limit 1'); //Obtains lowest hop distance of all followers of this followee
-        int authorHops = map[0]["hops"] as int;
-
-        await database.execute("insert into peers(identity, hops) values(${message.content["contact"]}, ${authorHops + 1}) on CONFLICT(identity) DO update set hops = ${authorHops + 1}");
+        await database.insert("messages", message.toFullMap());
       }
 
-      await database.insert("messages", message.toFullMap());
+      //database.close();
     }
-
-    //database.close();
+    on Exception {
+      rethrow;
+    }
   }
 
   static Future<List<FeedMessage>> retrieveMessages({ required String identity, int hops = 2 } /* We may have more parameters here in future */) async {

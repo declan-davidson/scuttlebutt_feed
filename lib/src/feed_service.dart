@@ -36,11 +36,8 @@ class FeedService{
       await _storeMessage(message);
       //database.close();
     }
-    on DatabaseException {
-      throw Exception("DatabaseException in postMessage");
-    }
     on Exception {
-      throw Exception("Some error in postMessage");
+      rethrow;
     }
   }
 
@@ -94,11 +91,8 @@ class FeedService{
       //database.close();
       return messages;
     }
-    on DatabaseException{
-      throw Exception("DatabaseException in retrieveMessages");
-    }
     on Exception{
-      throw Exception("Some exception in retrieveMessages");
+      rethrow;
     }
   }
 }

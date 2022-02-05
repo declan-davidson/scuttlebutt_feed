@@ -87,9 +87,10 @@ class FeedService{
     try{
       Database database = await _createOrOpenDatabase();
       
-      List<Map<String, Object?>> mappedMessages = await database.rawQuery('select * from messages inner join peers on messages.author = peers.identity where author = "$identity" or peers.hops < 3 order by timestamp desc');
+      //List<Map<String, Object?>> mappedMessages = await database.rawQuery('select * from messages inner join peers on messages.author = peers.identity where messages.author = "$identity" or peers.hops < 3 order by timestamp desc');
+      List<Map<String, Object?>> allMappedMessages = await database.rawQuery("select * from messages");
 
-      for(Map<String, Object?> message in mappedMessages){
+      for(Map<String, Object?> message in allMappedMessages){
         messages.add(FeedMessage.fromRetrievedMessage(message));
       }
 

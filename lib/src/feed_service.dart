@@ -81,7 +81,7 @@ class FeedService{
     }
   }
 
-  static Future<List<FeedMessage>> retrieveMessages({ required String identity, int hops = 2 } /* We may have more parameters here in future */) async {
+  static Future<List<Map<String, Object?>>> retrieveMessages({ required String identity, int hops = 2 } /* We may have more parameters here in future */) async {
     List<FeedMessage> messages = [];
 
     try{
@@ -90,12 +90,12 @@ class FeedService{
       //List<Map<String, Object?>> mappedMessages = await database.rawQuery('select * from messages inner join peers on messages.author = peers.identity where messages.author = "$identity" or peers.hops < 3 order by timestamp desc');
       List<Map<String, Object?>> allMappedMessages = await database.rawQuery("select * from messages");
 
-      for(Map<String, Object?> message in allMappedMessages){
+      /* for(Map<String, Object?> message in allMappedMessages){
         messages.add(FeedMessage.fromRetrievedMessage(message));
-      }
+      } */
 
       //database.close();
-      return messages;
+      return allMappedMessages;
     }
     on Exception{
       rethrow;

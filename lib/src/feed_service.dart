@@ -10,7 +10,7 @@ class FeedService{
       onCreate: (db, version) {
         db.execute("PRAGMA foreign_keys = ON");
         db.execute("CREATE TABLE peers(identity VARCHAR PRIMARY KEY, hops INTEGER NOT NULL)");
-        db.execute("CREATE TABLE messages(id VARCHAR PRIMARY KEY, previous VARCHAR, hash VARCHAR, author VARCHAR, sequence INTEGER, timestamp INTEGER, content VARCHAR, signature VARCHAR, FOREIGN KEY(author) references peers(identity))"); 
+        db.execute("CREATE TABLE messages(id VARCHAR PRIMARY KEY, previous VARCHAR, hash VARCHAR, author VARCHAR, sequence INTEGER, timestamp INTEGER, content VARCHAR, signature VARCHAR)"); 
         return db.execute("create table follows(follower VARCHAR, followee VARCHAR, FOREIGN key(follower) references peers(identity), FOREIGN key(followee) REFERENCES peers(identity))");
       },
       onConfigure: (db) { db.execute("PRAGMA foreign_keys = ON"); }

@@ -9,7 +9,7 @@ class FeedMessage{
   final String hash = "sha256";
   int sequence;
   late dynamic timestamp;
-  Map<String, dynamic> content;
+  Map content;
   late String signature;
   late String id;
 

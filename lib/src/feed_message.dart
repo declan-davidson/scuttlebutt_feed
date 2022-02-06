@@ -4,12 +4,12 @@ import 'package:flutter_sodium/flutter_sodium.dart';
 import 'package:crypto/crypto.dart' show sha256;
 
 class FeedMessage{
-  dynamic previous;
-  String author; //base64-encoded
+  late dynamic previous;
+  late String author; //base64-encoded
   final String hash = "sha256";
-  int sequence;
+  late int sequence;
   late dynamic timestamp;
-  Map content;
+  late Map content;
   late String signature;
   late String id;
 
@@ -18,14 +18,20 @@ class FeedMessage{
     _generateId();
   } */
 
-  FeedMessage.fromRetrievedMessage(Map<String, dynamic> mappedMessage):
-    previous = mappedMessage["previous"],
-    author = mappedMessage["author"],
-    sequence = mappedMessage["sequence"],
-    timestamp = mappedMessage["timestamp"],
-    content = mappedMessage["content"],
-    signature = mappedMessage["signature"],
-    id = mappedMessage["id"];
+  FeedMessage.fromRetrievedMessage(Map<String, dynamic> mappedMessage){
+    try{
+      previous = mappedMessage["previous"];
+      author = mappedMessage["author"];
+      sequence = mappedMessage["sequence"];
+      timestamp = mappedMessage["timestamp"];
+      content = mappedMessage["content"];
+      signature = mappedMessage["signature"];
+      id = mappedMessage["id"];
+    }
+    on Exception{
+      rethrow;
+    }
+  }
 
   FeedMessage.fromMessageToPostData(this.previous, this.author, this.sequence, this.content, String encodedSk) : timestamp = "strftime('%s','now')" {
     Uint8List sk = base64Decode(encodedSk);

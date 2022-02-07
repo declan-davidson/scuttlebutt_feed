@@ -8,8 +8,9 @@ class FeedMessage{
   late String author; //base64-encoded
   final String hash = "sha256";
   late int sequence;
-  late dynamic timestamp;
-  late Map content;
+  late int timestamp;
+  late Map<String, dynamic> content;
+  late String json_content;
   late String signature;
   late String id;
 
@@ -18,22 +19,20 @@ class FeedMessage{
     _generateId();
   } */
 
-  FeedMessage.fromRetrievedMessage(Map<String, dynamic> mappedMessage){
-    try{
-      previous = mappedMessage["previous"];
-      author = mappedMessage["author"];
-      sequence = mappedMessage["sequence"];
-      timestamp = mappedMessage["timestamp"];
-      content = mappedMessage["content"];
-      signature = mappedMessage["signature"];
-      id = mappedMessage["id"];
-    }
-    on Exception{
-      rethrow;
-    }
+  FeedMessage.fromRetrievedMessage(Map<String, dynamic> mappedMessage):
+    previous = mappedMessage["previous"],
+    author = mappedMessage["author"],
+    sequence = mappedMessage["sequence"],
+    timestamp = mappedMessage["timestamp"],
+    json_content = mappedMessage["content"],
+    signature = mappedMessage["signature"],
+    id = mappedMessage["id"]
+  {
+    content = jsonDecode(json_content);
   }
 
-  FeedMessage.fromMessageToPostData(this.previous, this.author, this.sequence, this.content, String encodedSk) : timestamp = "strftime('%s','now')" {
+  FeedMessage.fromMessageToPostData(this.previous, this.author, this.sequence, this.content, String encodedSk) : timestamp = DateTime.now().millisecondsSinceEpoch {
+    json_content = jsonEncode(content);
     Uint8List sk = base64Decode(encodedSk);
     _sign(sk);
   }
@@ -49,7 +48,10 @@ class FeedMessage{
     sequence = mappedMessage["sequence"],
     timestamp = mappedMessage["timestamp"],
     content = mappedMessage["content"],
-    signature = mappedMessage["signature"];
+    signature = mappedMessage["signature"]
+  {
+    json_content = jsonEncode(content);
+  }
 
   Map<String, dynamic> toMap(){
     return {
@@ -66,6 +68,21 @@ class FeedMessage{
   Map<String, dynamic> toFullMap(){
     Map<String, dynamic> map = toMap();
     map["id"] = _generateId();
+    return map;
+  }
+
+  Map<String, dynamic> toMapForDatabaseInsertion(){
+    Map<String, dynamic> map = {
+      "previous": previous,
+      "author": author,
+      "sequence": sequence,
+      "timestamp": timestamp,
+      "hash": hash,
+      "json_content": json_content,
+      "signature": signature
+    };
+    map["id"] = _generateId();
+    
     return map;
   }
 

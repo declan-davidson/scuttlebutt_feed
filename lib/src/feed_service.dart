@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 import 'feed_message.dart';
@@ -10,7 +12,7 @@ class FeedService{
       onCreate: (db, version) {
         db.execute("PRAGMA foreign_keys = ON");
         db.execute("CREATE TABLE peers(identity VARCHAR PRIMARY KEY, hops INTEGER NOT NULL)");
-        db.execute("CREATE TABLE messages(id VARCHAR PRIMARY KEY, previous VARCHAR, hash VARCHAR, author VARCHAR, sequence INTEGER, timestamp INTEGER, content VARCHAR, signature VARCHAR)"); 
+        db.execute("CREATE TABLE messages(id VARCHAR PRIMARY KEY, previous VARCHAR, hash VARCHAR, author VARCHAR, sequence INTEGER, timestamp INTEGER, json_content VARCHAR, signature VARCHAR)"); 
         return db.execute("create table follows(follower VARCHAR, followee VARCHAR, FOREIGN key(follower) references peers(identity), FOREIGN key(followee) REFERENCES peers(identity))");
       },
       onConfigure: (db) { db.execute("PRAGMA foreign_keys = ON"); }
@@ -25,7 +27,7 @@ class FeedService{
       Map<String, dynamic> content = { "type": "post", "content": body };
       
 
-      List<Map<String, Object?>> mappedPreviousMessage = await database.rawQuery('select * from messages where author = "$identity" order by sequence desc limit 1');
+      List<Map<String, Object?>> mappedPreviousMessage = await database.rawQuery('select * from messages where author = $identity order by sequence desc limit 1');
       if(mappedPreviousMessage.isNotEmpty){
         FeedMessage previousMessage = FeedMessage.fromRetrievedMessage(mappedPreviousMessage[0]);
         previous = previousMessage.id;
@@ -57,21 +59,21 @@ class FeedService{
 
           //If the peer has been newly-followed
           if(message.content["following"]){
-            await database.rawInsert('insert into follows(follower, followee) values("${message.author}", "${message.content["contact"]}")');
+            await database.rawInsert('insert into follows(follower, followee) values(${message.author}, ${message.content["contact"]})');
           }
           //If the peer has been unfollowed
           else{
-            await database.rawDelete('delete from follows where follower = "${message.author}" and followee = "${message.content["contact"]}"');
+            await database.rawDelete('delete from follows where follower = ${message.author} and followee = ${message.content["contact"]}');
           }
 
           //Update hops
-          List<Map<String, Object?>> map = await database.rawQuery('select hops from follows inner join peers on peers.identity = follows.follower where followee = "${message.content["contact"]}" order by hops asc limit 1'); //Obtains lowest hop distance of all followers of this followee
+          List<Map<String, Object?>> map = await database.rawQuery('select hops from follows inner join peers on peers.identity = follows.follower where followee = ${message.content["contact"]} order by hops asc limit 1'); //Obtains lowest hop distance of all followers of this followee
           int authorHops = map[0]["hops"] as int;
 
           await database.execute("insert into peers(identity, hops) values(${message.content["contact"]}, ${authorHops + 1}) on CONFLICT(identity) DO update set hops = ${authorHops + 1}");
         }
 
-        await database.insert("messages", message.toFullMap());
+        await database.insert("messages", message.toMapForDatabaseInsertion());
       }
 
       //database.close();

@@ -24,7 +24,7 @@ class FeedMessage{
     author = mappedMessage["author"],
     sequence = mappedMessage["sequence"],
     timestamp = mappedMessage["timestamp"],
-    json_content = mappedMessage["content"],
+    json_content = mappedMessage["json_content"],
     signature = mappedMessage["signature"],
     id = mappedMessage["id"]
   {

@@ -27,7 +27,7 @@ class FeedService{
       Map<String, dynamic> content = { "type": "post", "content": body };
       
 
-      List<Map<String, Object?>> mappedPreviousMessage = await database.rawQuery('select * from messages where author = $identity order by sequence desc limit 1');
+      List<Map<String, Object?>> mappedPreviousMessage = await database.rawQuery('select * from messages where author = "$identity" order by sequence desc limit 1');
       if(mappedPreviousMessage.isNotEmpty){
         FeedMessage previousMessage = FeedMessage.fromRetrievedMessage(mappedPreviousMessage[0]);
         previous = previousMessage.id;
@@ -59,18 +59,18 @@ class FeedService{
 
           //If the peer has been newly-followed
           if(message.content["following"]){
-            await database.rawInsert('insert into follows(follower, followee) values(${message.author}, ${message.content["contact"]})');
+            await database.rawInsert('insert into follows(follower, followee) values("${message.author}", "${message.content["contact"]}")');
           }
           //If the peer has been unfollowed
           else{
-            await database.rawDelete('delete from follows where follower = ${message.author} and followee = ${message.content["contact"]}');
+            await database.rawDelete('delete from follows where follower = "${message.author}" and followee = "${message.content["contact"]}"');
           }
 
           //Update hops
-          List<Map<String, Object?>> map = await database.rawQuery('select hops from follows inner join peers on peers.identity = follows.follower where followee = ${message.content["contact"]} order by hops asc limit 1'); //Obtains lowest hop distance of all followers of this followee
+          List<Map<String, Object?>> map = await database.rawQuery('select hops from follows inner join peers on peers.identity = follows.follower where followee = "${message.content["contact"]}" order by hops asc limit 1'); //Obtains lowest hop distance of all followers of this followee
           int authorHops = map[0]["hops"] as int;
 
-          await database.execute("insert into peers(identity, hops) values(${message.content["contact"]}, ${authorHops + 1}) on CONFLICT(identity) DO update set hops = ${authorHops + 1}");
+          await database.execute('insert into peers(identity, hops) values("${message.content["contact"]}", ${authorHops + 1}) on CONFLICT(identity) DO update set hops = ${authorHops + 1}');
         }
 
         await database.insert("messages", message.toMapForDatabaseInsertion());
@@ -89,10 +89,10 @@ class FeedService{
     try{
       Database database = await _createOrOpenDatabase();
       
-      //List<Map<String, Object?>> mappedMessages = await database.rawQuery('select * from messages inner join peers on messages.author = peers.identity where messages.author = "$identity" or peers.hops < 3 order by timestamp desc');
-      List<Map<String, Object?>> allMappedMessages = await database.rawQuery("select * from messages");
+      List<Map<String, Object?>> mappedMessages = await database.rawQuery('select * from messages left outer join peers on messages.author = peers.identity where messages.author = "$identity" or peers.hops < 3 order by timestamp desc');
+      //List<Map<String, Object?>> allMappedMessages = await database.rawQuery("select * from messages");
 
-      for(Map<String, Object?> message in allMappedMessages){
+      for(Map<String, Object?> message in mappedMessages){
         messages.add(FeedMessage.fromRetrievedMessage(message));
       }
 

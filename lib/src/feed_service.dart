@@ -83,13 +83,18 @@ class FeedService{
     }
   }
 
-  static Future<List<FeedMessage>> retrieveMessages({ required String identity, int hops = 2 } /* We may have more parameters here in future */) async {
+  static Future<List<FeedMessage>> retrieveMessages({ required String identity, int? hops, int? sequence, int? limit } /* We may have more parameters here in future */) async {
     List<FeedMessage> messages = [];
+    String query = 'select * from messages left outer join peers on messages.author = peers.identity where messages.author = "$identity"';
+    if(hops != null) query += ' or peers.hops <= $hops';
+    if(sequence != null) query += ' and messages.sequence > $sequence';
+    query += ' order by timestamp desc';
+    if(limit != null) query += ' limit $limit';
 
     try{
       Database database = await _createOrOpenDatabase();
       
-      List<Map<String, Object?>> mappedMessages = await database.rawQuery('select * from messages left outer join peers on messages.author = peers.identity where messages.author = "$identity" or peers.hops < 3 order by timestamp desc');
+      List<Map<String, Object?>> mappedMessages = await database.rawQuery(query);
       //List<Map<String, Object?>> allMappedMessages = await database.rawQuery("select * from messages");
 
       for(Map<String, Object?> message in mappedMessages){

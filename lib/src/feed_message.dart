@@ -35,20 +35,22 @@ class FeedMessage{
     json_content = jsonEncode(content);
     Uint8List sk = base64Decode(encodedSk);
     _sign(sk);
+    _generateId();
   }
 
-  factory FeedMessage.fromReceivedMessage(String jsonMessage){
-    Map<String, dynamic> mappedMessage = jsonDecode(jsonMessage);
-    return FeedMessage._fromMap(mappedMessage);
+  factory FeedMessage.fromReceivedMessage(Map<String, dynamic> message){
+    //Map<String, dynamic> mappedMessage = jsonDecode(jsonMessage);
+    return FeedMessage._fromMap(message);
   }
 
   FeedMessage._fromMap(Map<String, dynamic> mappedMessage):
-    previous = mappedMessage["previous"],
-    author = mappedMessage["author"],
-    sequence = mappedMessage["sequence"],
+    previous = mappedMessage["value"]["previous"],
+    author = mappedMessage["value"]["author"],
+    sequence = mappedMessage["value"]["sequence"],
     timestamp = mappedMessage["timestamp"],
-    content = mappedMessage["content"],
-    signature = mappedMessage["signature"]
+    content = mappedMessage["value"]["content"],
+    signature = mappedMessage["value"]["signature"],
+    id = mappedMessage["key"]
   {
     json_content = jsonEncode(content);
   }
@@ -79,9 +81,10 @@ class FeedMessage{
       "timestamp": timestamp,
       "hash": hash,
       "json_content": json_content,
-      "signature": signature
+      "signature": signature,
+      "id": id
     };
-    map["id"] = _generateId();
+    //map["id"] = _generateId();
     
     return map;
   }
@@ -103,6 +106,22 @@ class FeedMessage{
 
   String toSignaturelessJson(){
     return jsonEncode(toSignaturelessMap());
+  }
+
+  Map<String, dynamic> toRpcReturnMap(){
+    return {
+      "key": id,
+      "value": {
+        "previous": previous,
+        "author": author,
+        "sequence": sequence,
+        "timestamp": timestamp,
+        "hash": hash,
+        "content": content,
+        "signature": signature,
+      },
+      "timestamp": timestamp
+    };
   }
 
   void _sign(Uint8List secretKey){

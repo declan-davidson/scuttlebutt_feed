@@ -23,7 +23,7 @@ class FeedService{
     try{
       Database database = await _createOrOpenDatabase();
       dynamic previous = null;
-      int sequence = 0;
+      int sequence = 1;
       Map<String, dynamic> content = { "type": "post", "content": body };
       
 
@@ -43,8 +43,8 @@ class FeedService{
     }
   }
 
-  static void receiveMessage(String jsonMessage){
-    FeedMessage message = FeedMessage.fromReceivedMessage(jsonMessage);
+  static void receiveMessage(Map<String, dynamic> receivedMessage){
+    FeedMessage message = FeedMessage.fromReceivedMessage(receivedMessage);
     _storeMessage(message);
   }
 
@@ -73,7 +73,7 @@ class FeedService{
           await database.execute('insert into peers(identity, hops) values("${message.content["contact"]}", ${authorHops + 1}) on CONFLICT(identity) DO update set hops = ${authorHops + 1}');
         }
 
-        await database.insert("messages", message.toMapForDatabaseInsertion());
+        await database.insert("messages", message.toMapForDatabaseInsertion(), conflictAlgorithm: ConflictAlgorithm.ignore);
       }
 
       //database.close();
@@ -88,17 +88,17 @@ class FeedService{
     String query = 'select * from messages left outer join peers on messages.author = peers.identity where messages.author = "$identity"';
     if(hops != null) query += ' or peers.hops <= $hops';
     if(sequence != null) query += ' and messages.sequence > $sequence';
-    query += ' order by timestamp desc';
+    query += ' order by timestamp asc'; //To fulfil requirement of limit to return the EARLIEST x messages
     if(limit != null) query += ' limit $limit';
 
     try{
       Database database = await _createOrOpenDatabase();
       
       List<Map<String, Object?>> mappedMessages = await database.rawQuery(query);
-      //List<Map<String, Object?>> allMappedMessages = await database.rawQuery("select * from messages");
+      //List<Map<String, Object?>> mappedMessages = await database.rawQuery("select * from messages order by timestamp asc");
 
       for(Map<String, Object?> message in mappedMessages){
-        messages.add(FeedMessage.fromRetrievedMessage(message));
+        messages.insert(0, FeedMessage.fromRetrievedMessage(message)); //To attain descending order
       }
 
       //database.close();

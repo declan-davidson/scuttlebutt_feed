@@ -94,8 +94,8 @@ class FeedService{
     try{
       Database database = await _createOrOpenDatabase();
       
-      List<Map<String, Object?>> mappedMessages = await database.rawQuery(query);
-      //List<Map<String, Object?>> mappedMessages = await database.rawQuery("select * from messages order by timestamp asc");
+      //List<Map<String, Object?>> mappedMessages = await database.rawQuery(query);
+      List<Map<String, Object?>> mappedMessages = await database.rawQuery("select * from messages order by timestamp asc");
 
       for(Map<String, Object?> message in mappedMessages){
         messages.insert(0, FeedMessage.fromRetrievedMessage(message)); //To attain descending order

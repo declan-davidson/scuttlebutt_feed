@@ -46,7 +46,7 @@ class FeedService{
   static Future<void> likeMessage(String messageId) async {
     try{
       Database database = await _createOrOpenDatabase();
-      await database.query('UPDATE messages SET likes = likes + 1 WHERE id = "$messageId"');
+      await database.rawUpdate('UPDATE messages SET likes = likes + 1 WHERE id = "$messageId"');
     }
     on Exception {
       rethrow;

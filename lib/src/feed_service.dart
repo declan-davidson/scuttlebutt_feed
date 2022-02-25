@@ -12,7 +12,7 @@ class FeedService{
       onCreate: (db, version) {
         db.execute("PRAGMA foreign_keys = ON");
         db.execute("CREATE TABLE peers(identity VARCHAR PRIMARY KEY, hops INTEGER NOT NULL)");
-        db.execute("CREATE TABLE messages(id VARCHAR PRIMARY KEY, previous VARCHAR, hash VARCHAR, author VARCHAR, sequence INTEGER, timestamp INTEGER, json_content VARCHAR, signature VARCHAR)"); 
+        db.execute("CREATE TABLE messages(id VARCHAR PRIMARY KEY, previous VARCHAR, hash VARCHAR, author VARCHAR, sequence INTEGER, timestamp INTEGER, json_content VARCHAR, signature VARCHAR, likes INTEGER)"); 
         return db.execute("create table follows(follower VARCHAR, followee VARCHAR, FOREIGN key(follower) references peers(identity), FOREIGN key(followee) REFERENCES peers(identity))");
       },
       onConfigure: (db) { db.execute("PRAGMA foreign_keys = ON"); }
@@ -37,6 +37,16 @@ class FeedService{
       FeedMessage message = FeedMessage.fromMessageToPostData(previous, identity, sequence, content, encodedSk);
       await _storeMessage(message);
       //database.close();
+    }
+    on Exception {
+      rethrow;
+    }
+  }
+
+  static Future<void> likeMessage(String messageId) async {
+    try{
+      Database database = await _createOrOpenDatabase();
+      await database.query('UPDATE messages SET likes = likes + 1 WHERE id = "$messageId"');
     }
     on Exception {
       rethrow;

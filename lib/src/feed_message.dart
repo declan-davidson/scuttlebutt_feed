@@ -13,6 +13,7 @@ class FeedMessage{
   late String json_content;
   late String signature;
   late String id;
+  late int likes;
 
 /*   FeedMessage(this.previous, this.author, this.sequence, this.content, { required Uint8List secretKey }){
     sign(secretKey);
@@ -26,7 +27,8 @@ class FeedMessage{
     timestamp = mappedMessage["timestamp"],
     json_content = mappedMessage["json_content"],
     signature = mappedMessage["signature"],
-    id = mappedMessage["id"]
+    id = mappedMessage["id"],
+    likes = mappedMessage["likes"]
   {
     content = jsonDecode(json_content);
   }

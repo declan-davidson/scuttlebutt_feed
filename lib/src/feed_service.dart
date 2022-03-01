@@ -19,7 +19,7 @@ class FeedService{
     );
   }
 
-  static Future<void> postMessage(String body, String identity, String encodedSk) async {
+  static Future<void> postMessage(String body, String identity, String encodedSk, { int likes = 0 }) async {
     try{
       Database database = await _createOrOpenDatabase();
       dynamic previous = null;
@@ -34,7 +34,7 @@ class FeedService{
         sequence = previousMessage.sequence + 1;
       }
 
-      FeedMessage message = FeedMessage.fromMessageToPostData(previous, identity, sequence, content, encodedSk);
+      FeedMessage message = FeedMessage.fromMessageToPostData(previous, identity, sequence, content, likes, encodedSk);
       await _storeMessage(message);
       //database.close();
     }

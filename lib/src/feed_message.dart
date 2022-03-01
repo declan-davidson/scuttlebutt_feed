@@ -33,8 +33,7 @@ class FeedMessage{
     content = jsonDecode(json_content);
   }
 
-  FeedMessage.fromMessageToPostData(this.previous, this.author, this.sequence, this.content, String encodedSk) : timestamp = DateTime.now().millisecondsSinceEpoch {
-    likes = 0;
+  FeedMessage.fromMessageToPostData(this.previous, this.author, this.sequence, this.content, this.likes, String encodedSk) : timestamp = DateTime.now().millisecondsSinceEpoch {
     json_content = jsonEncode(content);
     Uint8List sk = base64Decode(encodedSk);
     _sign(sk);

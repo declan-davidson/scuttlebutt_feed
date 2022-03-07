@@ -118,4 +118,14 @@ class FeedService{
       rethrow;
     }
   }
+
+  static void resetIdentity() async {
+    try{
+      Database database = await _createOrOpenDatabase();
+      database.delete("messages");
+    }
+    on Exception{
+      rethrow;
+    }
+  }
 }

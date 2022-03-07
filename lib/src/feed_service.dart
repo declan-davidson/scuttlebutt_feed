@@ -119,10 +119,10 @@ class FeedService{
     }
   }
 
-  static void resetIdentity() async {
+  static Future<void> resetIdentity() async {
     try{
       Database database = await _createOrOpenDatabase();
-      database.delete("messages");
+      await database.delete("messages");
     }
     on Exception{
       rethrow;
